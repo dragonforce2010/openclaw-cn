@@ -25,6 +25,10 @@ export type ResolvedFeishuConfig = {
   replyToMode: ReplyToMode;
   mediaMaxMb: number;
   groups: Record<string, FeishuGroupConfig>;
+  /** Whether to enable lark-mcp as MCP Server. Default: true. */
+  mcpBridge: boolean;
+  /** lark-mcp tool preset. Default: "preset.default". */
+  mcpPreset: string;
 };
 
 /**
@@ -59,6 +63,10 @@ export function resolveFeishuConfig(params: {
     replyToMode: firstDefined(accountCfg?.replyToMode, feishuCfg?.replyToMode) ?? "all",
     mediaMaxMb: firstDefined(accountCfg?.mediaMaxMb, feishuCfg?.mediaMaxMb) ?? 30,
     groups: { ...(feishuCfg?.groups ?? {}), ...(accountCfg?.groups ?? {}) },
+    mcpBridge: firstDefined((accountCfg as any)?.mcpBridge, (feishuCfg as any)?.mcpBridge) ?? true,
+    mcpPreset:
+      firstDefined((accountCfg as any)?.mcpPreset, (feishuCfg as any)?.mcpPreset) ??
+      "preset.default",
   };
 }
 

@@ -38,6 +38,8 @@ import { routeReply } from "./route-reply.js";
 import type { buildCommandContext } from "./commands.js";
 import type { InlineDirectives } from "./directive-handling.js";
 import { buildGroupIntro } from "./groups.js";
+import { buildFeishuChannelContext } from "../../feishu/channel-context.js";
+import { isFeishuMcpBridgeActive } from "../../feishu/mcp-bridge.js";
 import type { createModelSelectionState } from "./model-selection.js";
 import { resolveQueueSettings } from "./queue.js";
 import { ensureSkillSnapshot, prependSystemEvents } from "./session-updates.js";
@@ -181,7 +183,13 @@ export async function runPreparedReply(
       })
     : "";
   const groupSystemPrompt = sessionCtx.GroupSystemPrompt?.trim() ?? "";
-  const extraSystemPrompt = [groupIntro, groupSystemPrompt].filter(Boolean).join("\n\n");
+  const feishuChannelContext =
+    sessionCtx.Provider?.trim().toLowerCase() === "feishu"
+      ? buildFeishuChannelContext({ mcpBridgeActive: isFeishuMcpBridgeActive() })
+      : "";
+  const extraSystemPrompt = [groupIntro, groupSystemPrompt, feishuChannelContext]
+    .filter(Boolean)
+    .join("\n\n");
   const baseBody = sessionCtx.BodyStripped ?? sessionCtx.Body ?? "";
   // Use CommandBody/RawBody for bare reset detection (clean message without structural context).
   const rawBodyTrimmed = (ctx.CommandBody ?? ctx.RawBody ?? ctx.Body ?? "").trim();

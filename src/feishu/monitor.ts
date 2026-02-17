@@ -6,6 +6,7 @@ import type { RuntimeEnv } from "../runtime.js";
 import { resolveFeishuAccount } from "./accounts.js";
 import { toLarkDomain } from "./client.js";
 import { resolveFeishuConfig } from "./config.js";
+import { startFeishuMcpBridge, stopFeishuMcpBridge } from "./mcp-bridge.js";
 import { processFeishuMessage } from "./message.js";
 import { probeFeishu } from "./probe.js";
 
@@ -58,6 +59,20 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
     }
   } catch (err) {
     logger.warn(`Failed to fetch bot info for @mention detection: ${err}`);
+  }
+
+  // Start Feishu MCP Bridge if enabled
+  if (feishuCfg.mcpBridge) {
+    try {
+      await startFeishuMcpBridge({
+        appId,
+        appSecret,
+        domain: feishuCfg.domain,
+        preset: feishuCfg.mcpPreset,
+      });
+    } catch (err) {
+      logger.warn(`Failed to start Feishu MCP Bridge (non-fatal): ${err}`);
+    }
   }
 
   // Resolve Lark domain (feishu/lark)
@@ -138,6 +153,7 @@ export async function monitorFeishuProvider(opts: MonitorFeishuOpts = {}): Promi
     logger.info("Stopping Feishu WS client...");
     // WSClient doesn't have a stop method exposed, but it should handle disconnection
     // We'll let the process handle cleanup
+    stopFeishuMcpBridge().catch(() => {});
   };
 
   if (opts.abortSignal) {
